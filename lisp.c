@@ -268,6 +268,25 @@ lookup_symbol(char *name)
     return NULL;
 }
 
+static int
+compare(int x, int y, char *type)
+{
+    if (strcmp(type, "=") == 0) {
+        return x == y;
+    } else if (strcmp(type, "!=") == 0) {
+        return x != y;
+    } else if (strcmp(type, "<") == 0) {
+        return x < y;
+    } else if (strcmp(type, ">") == 0) {
+        return x > y;
+    } else if (strcmp(type, "<=") == 0) {
+        return x <= y;
+    } else if (strcmp(type, ">=") == 0) {
+        return x >= y;
+    }
+    return 0;
+}
+
 LispNode *
 eval(LispNode *node)
 {
@@ -321,6 +340,30 @@ eval(LispNode *node)
             n->ivalue = left / right;
 
             return n;
+        } else if (strcmp(op, "=") == 0) {
+            n->type = TOK_NUM;
+            n->ivalue = compare(eval(node->children[1])->ivalue, eval(node->children[2])->ivalue, "=");
+            return n;
+        } else if (strcmp(op, "<") == 0) {
+            n->type = TOK_NUM;
+            n->ivalue = compare(eval(node->children[1])->ivalue, eval(node->children[2])->ivalue, "<");
+            return n;
+        } else if (strcmp(op, ">") == 0) {
+            n->type = TOK_NUM;
+            n->ivalue = compare(eval(node->children[1])->ivalue, eval(node->children[2])->ivalue, ">");
+            return n;
+        } else if (strcmp(op, "<=") == 0) {
+            n->type = TOK_NUM;
+            n->ivalue = compare(eval(node->children[1])->ivalue, eval(node->children[2])->ivalue, "<=");
+            return n;
+        } else if (strcmp(op, ">=") == 0) {
+            n->type = TOK_NUM;
+            n->ivalue = compare(eval(node->children[1])->ivalue, eval(node->children[2])->ivalue, ">=");
+            return n;
+        } else if (strcmp(op, "!=") == 0) {
+            n->type = TOK_NUM;
+            n->ivalue = compare(eval(node->children[1])->ivalue, eval(node->children[2])->ivalue, "!=");
+            return n;
         } else if (strcmp(op, "define") == 0) { /* DEFINE */
             free(n);
             define_symbol(node->children[1]->svalue, eval(node->children[2]));
@@ -330,11 +373,25 @@ eval(LispNode *node)
 
             LispNode *arg = eval(node->children[1]);
             if (arg->type == TOK_NUM)
-                printf("%d\n", arg->ivalue);
+                printf("%d", arg->ivalue);
             else if (arg->type == TOK_STR)
-                printf("%s\n", arg->svalue);
+                printf("%s", arg->svalue);
 
             break;
+        } else if (strcmp(op, "scan") == 0) {  /* PRINT */
+            char buf[4096];
+            fgets(buf, sizeof(buf), stdin);
+            buf[strcspn(buf, "\n")] = '\0';
+
+            if (isdigit(buf[0])) {
+                n->type = TOK_NUM;
+                n->ivalue = atoi(&buf[0]);
+            } else {
+                n->type = TOK_STR;
+                n->svalue = strdup(buf);
+            }
+
+            return n;
         } else if (strcmp(op, "lambda") == 0) { /* LAMBDA */
             n->type = TOK_LAMBDA;
             n->body = node->children[2];
@@ -346,6 +403,13 @@ eval(LispNode *node)
             for (int i = 0; i < count; i++)
                 n->params[i] = node->children[1]->children[i]->svalue;
             return n;
+        } else if (strcmp(op, "if") == 0) { // if () then else
+            free(n);
+
+            if (eval(node->children[1])->ivalue == 1)
+                return eval(node->children[2]);
+            else
+                return eval(node->children[3]);
         } else { // assume function call
             LispNode *fn = eval(node->children[0]);
             int temp = symcount;
