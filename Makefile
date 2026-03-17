@@ -10,6 +10,6 @@ build:
 	$(CC) $(CFLAGS) $(SOURCES) -o $(TARGET)
 
 clean:
-	rm -f $(SOURCES)
+	rm -f $(TARGET)
 
 .PHONY: all clean build
