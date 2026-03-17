@@ -1,8 +1,13 @@
 (define x 10)
-(define y 20)
+(define y 10)
 (print (+ x y))
+(print (- x y))
 (print (* x y))
-(print (- y x))
-(print "hello")
+(print (/ x y))
+
 (define hi "hello")
 (print hi)
+(print "world")
+
+(define add (lambda (x y) (+ x y)))
+(print (add 5 5))

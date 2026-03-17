@@ -10,7 +10,8 @@ typedef enum {
     TOK_RPAREN,
     TOK_NUM,
     TOK_STR,
-    TOK_ATOM
+    TOK_ATOM,
+    TOK_LAMBDA
 } TokenType;
 
 typedef struct Token {
@@ -28,6 +29,11 @@ typedef struct LispNode {
             struct LispNode **children;
             int child_count;
         };
+        struct {
+            char **params;
+            int param_count;
+            struct LispNode *body;
+        };
         union {
             int ivalue;
             float fvalue;
@@ -39,7 +45,7 @@ typedef struct LispNode {
 
 typedef struct {
     char *name;
-    LispNode value;
+    LispNode *value;
 } Symbol;
 
 Symbol symtable[1024];
@@ -171,6 +177,7 @@ parse_atom(Token *tokarr, int *pos)
         break;
     case TOK_LPAREN: // pedantic (for the compiler)
     case TOK_RPAREN: // ^
+    case TOK_LAMBDA: // ^
         return NULL;
     }
 
@@ -214,6 +221,7 @@ parse_expr(Token *tokarr, int *pos)
     return n;
 }
 
+// this may not be needed
 void
 print_node(LispNode *node, int depth)
 {
@@ -236,6 +244,7 @@ print_node(LispNode *node, int depth)
         printf("%*s%s %s\n", depth, "", "ATOM", node->svalue);
         break;
     case TOK_RPAREN:
+    case TOK_LAMBDA:
         return;
     }
 }
@@ -245,14 +254,14 @@ define_symbol(char *name, LispNode *value)
 {
     if (!name) return;
     symtable[symcount].name = name;
-    symtable[symcount].value = *value;
+    symtable[symcount].value = value;
     symcount++;
 }
 
 Symbol *
 lookup_symbol(char *name)
 {
-    for (int i = 0; i < symcount; i++) {
+    for (int i = symcount - 1; i >= 0; i--) {
         if (strcmp(symtable[i].name, name) == 0)
             return &symtable[i];
     }
@@ -268,8 +277,14 @@ eval(LispNode *node)
     case TOK_NUM:
     case TOK_STR:
         return node;
-    case TOK_ATOM:
-        return &lookup_symbol(node->svalue)->value;
+    case TOK_ATOM: { // TODO: better error handling
+        Symbol *tempsym = lookup_symbol(node->svalue);
+        if (!tempsym) {
+            fprintf(stderr, "%s not defined!", node->svalue);
+            exit(EXIT_FAILURE);
+        }
+        return tempsym->value;
+    }
     case TOK_LPAREN: {
         char *op = node->children[0]->svalue;
         LispNode *n = calloc(1, sizeof(LispNode));
@@ -306,21 +321,48 @@ eval(LispNode *node)
             n->ivalue = left / right;
 
             return n;
-        } else if (strcmp(op, "define") == 0) {
+        } else if (strcmp(op, "define") == 0) { /* DEFINE */
             free(n);
             define_symbol(node->children[1]->svalue, eval(node->children[2]));
             break;
-        } else if (strcmp(op, "print") == 0) {
+        } else if (strcmp(op, "print") == 0) {  /* PRINT */
             free(n);
+
             LispNode *arg = eval(node->children[1]);
             if (arg->type == TOK_NUM)
                 printf("%d\n", arg->ivalue);
             else if (arg->type == TOK_STR)
                 printf("%s\n", arg->svalue);
+
             break;
+        } else if (strcmp(op, "lambda") == 0) { /* LAMBDA */
+            n->type = TOK_LAMBDA;
+            n->body = node->children[2];
+
+            int count = node->children[1]->child_count;
+            n->params = malloc(sizeof(char *) * count);
+            n->param_count = count;
+
+            for (int i = 0; i < count; i++)
+                n->params[i] = node->children[1]->children[i]->svalue;
+            return n;
+        } else { // assume function call
+            LispNode *fn = eval(node->children[0]);
+            int temp = symcount;
+
+            if (fn && fn->type == TOK_LAMBDA) {
+                for (int i = 0; i < fn->param_count; i++) {
+                    define_symbol(fn->params[i], eval(node->children[i + 1]));
+                }
+            }
+
+            LispNode *result = eval(fn->body);
+            symcount = temp;
+            return result;
         }
     }
-    case TOK_RPAREN:
+    case TOK_LAMBDA: // pedantic (for the compiler)
+    case TOK_RPAREN: // ^
         break;
     }
 
