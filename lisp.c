@@ -70,9 +70,7 @@ main(int argc, char **argv)
     int pos = 0;
     while (pos < (int) num_tokens) {
         LispNode *root = parse_expr(tokarr, &pos);
-        LispNode *result = eval(root);
-        if (result && result->type == TOK_NUM)
-            printf("%d\n", result->ivalue);
+        eval(root);
     }
 
     free(buf);
@@ -311,6 +309,14 @@ eval(LispNode *node)
         } else if (strcmp(op, "define") == 0) {
             free(n);
             define_symbol(node->children[1]->svalue, eval(node->children[2]));
+            break;
+        } else if (strcmp(op, "print") == 0) {
+            free(n);
+            LispNode *arg = eval(node->children[1]);
+            if (arg->type == TOK_NUM)
+                printf("%d\n", arg->ivalue);
+            else if (arg->type == TOK_STR)
+                printf("%s\n", arg->svalue);
             break;
         }
     }
