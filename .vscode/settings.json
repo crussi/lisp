@@ -1,0 +1,56 @@
+{
+  "debug.disassemblyView.showSourceCode": false,
+  "git.enableSmartCommit": true,
+  "terminal.integrated.defaultProfile.windows": "MSYS2 MinGW64",
+  "terminal.integrated.profiles.windows": {
+    "PowerShell": {
+      "source": "PowerShell",
+      "icon": "terminal-powershell"
+    },
+    "Command Prompt": {
+      "path": [
+        "${env:windir}\\Sysnative\\cmd.exe",
+        "${env:windir}\\System32\\cmd.exe"
+      ],
+      "args": [],
+      "icon": "terminal-cmd"
+    },
+    "Git Bash": {
+      "path": "C:\\Program Files\\Git\\bin\\bash.exe",
+      "args": ["--login", "-i"]
+    },
+    "MSYS2 MinGW64": {
+      "path": "C:\\msys64\\usr\\bin\\bash.exe",
+      "args": ["--login", "-i"],
+      "env": {
+        "MSYSTEM": "MINGW64"
+      }
+    }
+  },
+  "terminal.integrated.cwd": "${workspaceFolder}",
+  "mssql.connectionGroups": [
+    {
+      "name": "ROOT",
+      "id": "ROOT"
+    }
+  ],
+  "explorer.confirmDragAndDrop": false,
+  "go.toolsManagement.autoUpdate": true,
+  "terminal.integrated.env.windows": {
+    "PATH": "C:\\msys64\\mingw64\\bin;${env:PATH}"
+  },
+
+  // =============================
+  // CLANG-FORMAT SETTINGS FOR C/C++
+  // =============================
+  "editor.formatOnSave": true,
+  "[c]": {
+    "editor.defaultFormatter": "xaver.clang-format"
+  },
+  "[cpp]": {
+    "editor.defaultFormatter": "xaver.clang-format"
+  },
+  "C_Cpp.clang_format_style": "file", // look for .clang-format in project
+  "C_Cpp.clang_format_fallbackStyle": "LLVM",
+  "makefile.configureOnOpen": true // fallback style if none found
+}
