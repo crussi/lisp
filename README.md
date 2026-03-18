@@ -3,5 +3,6 @@
 
 # lisp
 
-This is my first attempt at making an interpreter  
-Look at the code if you want to know how to use it  
+This is my amazing son's first attempt at making an interpreter  
+Look at the code if you want to know how to use it. It has been modified
+to work on Windows (as well as Linux)
